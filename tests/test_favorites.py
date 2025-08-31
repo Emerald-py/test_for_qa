@@ -1,6 +1,9 @@
+import time
 import pytest
+import requests
 from ..api_methods.favorites_api import FavoritesAPI
 from .data_generator import generate_data_with_color, generate_data_without_color
+from ..endpoints import Endpoints
 
 
 def test_create_place_with_mandatory_parameters(token):
@@ -209,3 +212,37 @@ def test_create_place_with_empty_color_parameter(token):
     resp_json = response.json()
     assert resp_json["error"]["message"] == ("Параметр 'color' может быть одним из следующих значений: "
                                              "BLUE, GREEN, RED, YELLOW")
+
+
+def test_create_place_without_token():
+    url = f"{Endpoints.BASE_URL}{Endpoints.FAVORITES_ENDPOINT}"
+    payload = generate_data_without_color()
+    response = requests.post(url, data=payload)
+    assert response.status_code == 401
+    resp_json = response.json()
+    assert resp_json["error"]["message"] == "Параметр 'token' является обязательным"
+
+
+def test_create_place_with_expired_token(token):
+    payload = generate_data_without_color()
+    time.sleep(2.5)
+    response = FavoritesAPI.create_favorite(token, payload)
+    assert response.status_code == 401
+    resp_json = response.json()
+    assert resp_json["error"]["message"] == "Передан несуществующий или «протухший» 'token'"
+
+
+def test_create_place_with_invalid_token(token):
+    payload = generate_data_without_color()
+    response = FavoritesAPI.create_favorite('1fd44647524943f3bb3dd4bae9eb475a', payload)
+    assert response.status_code == 401
+    resp_json = response.json()
+    assert resp_json["error"]["message"] == "Передан несуществующий или «протухший» 'token'"
+
+
+def test_create_place_with_empty_token():
+    payload = generate_data_without_color()
+    response = FavoritesAPI.create_favorite('', payload)
+    assert response.status_code == 401
+    resp_json = response.json()
+    assert resp_json["error"]["message"] == "Передан несуществующий или «протухший» 'token'"
