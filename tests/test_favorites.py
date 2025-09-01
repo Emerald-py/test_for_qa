@@ -68,7 +68,10 @@ def test_create_place_with_valid_coordinates_in_different_symbol_combinations(to
     assert resp_json["color"] is None
 
 
-@pytest.mark.parametrize("coordinates", [(00.00, 00.00), (-90.00, -180.00), (90.00, 180.00)])
+@pytest.mark.parametrize("coordinates", [pytest.param(
+    (00.00, 00.00), marks=pytest.mark.xfail(reason="Сервер возвращает 500 статус-код при нулевых координатах")),
+    (-90.00, -180.00),
+    (90.00, 180.00)])
 def test_create_place_with_extreme_coordinate_values(token, coordinates):
     payload = generate_data_without_color()
     payload["lat"] = coordinates[0]
@@ -95,6 +98,7 @@ def test_create_place_with_title_with_extreme_length_values(token, title):
     assert resp_json["color"] is None
 
 
+@pytest.mark.xfail(reason="Опечатка в ответе в слове 'обязательным'")
 def test_create_place_without_title_parameter(token):
     payload = generate_data_without_color()
     del payload["title"]
@@ -113,6 +117,7 @@ def test_create_place_with_empty_title_parameter(token):
     assert resp_json["error"]["message"] == "Параметр 'title' не может быть пустым"
 
 
+@pytest.mark.xfail(reason="Сервер возвращает объект с длиной параметра 'title' более 999 символов")
 def test_create_place_with_exceeded_title_length(token):
     payload = generate_data_without_color()
     payload["title"] = "W" * 1000
